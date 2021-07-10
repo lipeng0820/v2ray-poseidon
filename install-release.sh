@@ -1,452 +1,581 @@
-#!/bin/bash
-
-# A copy of official file: github.com/v2ray/v2ray-core/blob/master/release/install-release.sh
-# Original source is located at github.com/ColetteContreras/v2ray-poseidon/blob/master/install-release.sh
-
-# If not specify, default meaning of return value:
-# 0: Success
-# 1: System error
-# 2: Application error
-# 3: Network error
-
-CUR_VER=""
-NEW_VER=""
-ARCH=""
-VDIS="64"
-ZIPFILE="/tmp/v2ray/v2ray.zip"
-V2RAY_RUNNING=0
-VSRC_ROOT="/tmp/v2ray"
-EXTRACT_ONLY=0
-ERROR_IF_UPTODATE=0
-
-CMD_INSTALL=""
-CMD_UPDATE=""
-SOFTWARE_UPDATED=0
-
-SYSTEMCTL_CMD=$(command -v systemctl 2>/dev/null)
-SERVICE_CMD=$(command -v service 2>/dev/null)
-
-CHECK=""
-FORCE=""
-HELP=""
-
-#######color code########
-RED="31m"      # Error message
-GREEN="32m"    # Success message
-YELLOW="33m"   # Warning message
-BLUE="36m"     # Info message
+# Shadowrocket: 2021-07-11 02:07:43
+[General]
+bypass-system = true
+skip-proxy = 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12, localhost, *.local, captive.apple.com
+tun-excluded-routes = 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.0.2.0/24, 192.88.99.0/24, 192.168.0.0/16, 198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24, 224.0.0.0/4, 255.255.255.255/32
+dns-server = system
+ipv6 = true
 
 
-#########################
-while [[ $# > 0 ]];do
-    key="$1"
-    case $key in
-        -p|--proxy)
-        PROXY="-x ${2}"
-        shift # past argument
-        ;;
-        -h|--help)
-        HELP="1"
-        ;;
-        -f|--force)
-        FORCE="1"
-        ;;
-        -c|--check)
-        CHECK="1"
-        ;;
-        --remove)
-        REMOVE="1"
-        ;;
-        --version)
-        VERSION="$2"
-        shift
-        ;;
-        --extract)
-        VSRC_ROOT="$2"
-        shift
-        ;;
-        --extractonly)
-        EXTRACT_ONLY="1"
-        ;;
-        -l|--local)
-        LOCAL="$2"
-        LOCAL_INSTALL="1"
-        shift
-        ;;
-        --errifuptodate)
-        ERROR_IF_UPTODATE="1"
-        ;;
-        *)
-                # unknown option
-        ;;
-    esac
-    shift # past argument or value
-done
 
-###############################
-colorEcho(){
-    COLOR=$1
-    echo -e "\033[${COLOR}${@:2}\033[0m"
-}
+[Rule]
+DOMAIN-SUFFIX,savieo.com,PROXY
+DOMAIN-SUFFIX,baidu.com,DIRECT
+DOMAIN-SUFFIX,baidubcr.com,DIRECT
+DOMAIN-SUFFIX,bdstatic.com,DIRECT
+DOMAIN-SUFFIX,yunjiasu-cdn.net,DIRECT
+DOMAIN-SUFFIX,taobao.com,DIRECT
+DOMAIN-SUFFIX,alicdn.com,DIRECT
+DOMAIN,blzddist1-a.akamaihd.net,DIRECT
+DOMAIN,cdn.angruo.com,DIRECT
+DOMAIN,download.jetbrains.com,DIRECT
+DOMAIN,file-igamecj.akamaized.net,DIRECT
+DOMAIN,images-cn.ssl-images-amazon.com,DIRECT
+DOMAIN,officecdn-microsoft-com.akamaized.net,DIRECT
+DOMAIN,speedtest.macpaw.com,DIRECT
+DOMAIN-SUFFIX,126.net,DIRECT
+DOMAIN-SUFFIX,127.net,DIRECT
+DOMAIN-SUFFIX,163.com,DIRECT
+DOMAIN-SUFFIX,163yun.com,DIRECT
+DOMAIN-SUFFIX,21cn.com,DIRECT
+DOMAIN-SUFFIX,343480.com,DIRECT
+DOMAIN-SUFFIX,360buyimg.com,DIRECT
+DOMAIN-SUFFIX,360in.com,DIRECT
+DOMAIN-SUFFIX,51ym.me,DIRECT
+DOMAIN-SUFFIX,71.am.com,DIRECT
+DOMAIN-SUFFIX,8686c.com,DIRECT
+DOMAIN-SUFFIX,abchina.com,DIRECT
+DOMAIN-SUFFIX,accuweather.com,DIRECT
+DOMAIN-SUFFIX,acgvideo.com,DIRECT
+DOMAIN-SUFFIX,acm.org,DIRECT
+DOMAIN-SUFFIX,acs.org,DIRECT
+DOMAIN-SUFFIX,aicoinstorge.com,DIRECT
+DOMAIN-SUFFIX,aip.org,DIRECT
+DOMAIN-SUFFIX,air-matters.com,DIRECT
+DOMAIN-SUFFIX,air-matters.io,DIRECT
+DOMAIN-SUFFIX,aixifan.com,DIRECT
+DOMAIN-SUFFIX,akadns.net,DIRECT
+DOMAIN-SUFFIX,alibaba.com,DIRECT
+DOMAIN-SUFFIX,alikunlun.com,DIRECT
+DOMAIN-SUFFIX,alipay.com,DIRECT
+DOMAIN-SUFFIX,amap.com,DIRECT
+DOMAIN-SUFFIX,amd.com,DIRECT
+DOMAIN-SUFFIX,ams.org,DIRECT
+DOMAIN-SUFFIX,animebytes.tv,DIRECT
+DOMAIN-SUFFIX,annualreviews.org,DIRECT
+DOMAIN-SUFFIX,aps.org,DIRECT
+DOMAIN-SUFFIX,ascelibrary.org,DIRECT
+DOMAIN-SUFFIX,asm.org,DIRECT
+DOMAIN-SUFFIX,asme.org,DIRECT
+DOMAIN-SUFFIX,astm.org,DIRECT
+DOMAIN-SUFFIX,autonavi.com,DIRECT
+DOMAIN-SUFFIX,awesome-hd.me,DIRECT
+DOMAIN-SUFFIX,b612.net,DIRECT
+DOMAIN-SUFFIX,baduziyuan.com,DIRECT
+DOMAIN-SUFFIX,battle.net,DIRECT
+DOMAIN-SUFFIX,bdatu.com,DIRECT
+DOMAIN-SUFFIX,beitaichufang.com,DIRECT
+DOMAIN-SUFFIX,biliapi.com,DIRECT
+DOMAIN-SUFFIX,biliapi.net,DIRECT
+DOMAIN-SUFFIX,bilibili.com,DIRECT
+DOMAIN-SUFFIX,bilibili.tv,DIRECT
+DOMAIN-SUFFIX,bjango.com,DIRECT
+DOMAIN-SUFFIX,blizzard.com,DIRECT
+DOMAIN-SUFFIX,bmj.com,DIRECT
+DOMAIN-SUFFIX,booking.com,DIRECT
+DOMAIN-SUFFIX,broadcasthe.net,DIRECT
+DOMAIN-SUFFIX,bstatic.com,DIRECT
+DOMAIN-SUFFIX,cailianpress.com,DIRECT
+DOMAIN-SUFFIX,cambridge.org,DIRECT
+DOMAIN-SUFFIX,camera360.com,DIRECT
+DOMAIN-SUFFIX,cas.org,DIRECT
+DOMAIN-SUFFIX,ccgslb.com,DIRECT
+DOMAIN-SUFFIX,ccgslb.net,DIRECT
+DOMAIN-SUFFIX,cctv.com,DIRECT
+DOMAIN-SUFFIX,cctvpic.com,DIRECT
+DOMAIN-SUFFIX,chdbits.co,DIRECT
+DOMAIN-SUFFIX,chinanetcenter.com,DIRECT
+DOMAIN-SUFFIX,chinaso.com,DIRECT
+DOMAIN-SUFFIX,chua.pro,DIRECT
+DOMAIN-SUFFIX,chuimg.com,DIRECT
+DOMAIN-SUFFIX,chunyu.mobi,DIRECT
+DOMAIN-SUFFIX,chushou.tv,DIRECT
+DOMAIN-SUFFIX,clarivate.com,DIRECT
+DOMAIN-SUFFIX,classix-unlimited.co.uk,DIRECT
+DOMAIN-SUFFIX,cmbchina.com,DIRECT
+DOMAIN-SUFFIX,cmbimg.com,DIRECT
+DOMAIN-SUFFIX,cn,DIRECT
+DOMAIN-SUFFIX,com-hs-hkdy.com,DIRECT
+DOMAIN-SUFFIX,ctrip.com,DIRECT
+DOMAIN-SUFFIX,czybjz.com,DIRECT
+DOMAIN-SUFFIX,dandanzan.com,DIRECT
+DOMAIN-SUFFIX,dfcfw.com,DIRECT
+DOMAIN-SUFFIX,didialift.com,DIRECT
+DOMAIN-SUFFIX,didiglobal.com,DIRECT
+DOMAIN-SUFFIX,dingtalk.com,DIRECT
+DOMAIN-SUFFIX,docschina.org,DIRECT
+DOMAIN-SUFFIX,douban.com,DIRECT
+DOMAIN-SUFFIX,doubanio.com,DIRECT
+DOMAIN-SUFFIX,douyu.com,DIRECT
+DOMAIN-SUFFIX,duokan.com,DIRECT
+DOMAIN-SUFFIX,dxycdn.com,DIRECT
+DOMAIN-SUFFIX,dytt8.net,DIRECT
+DOMAIN-SUFFIX,eastmoney.com,DIRECT
+DOMAIN-SUFFIX,ebscohost.com,DIRECT
+DOMAIN-SUFFIX,emerald.com,DIRECT
+DOMAIN-SUFFIX,empornium.me,DIRECT
+DOMAIN-SUFFIX,engineeringvillage.com,DIRECT
+DOMAIN-SUFFIX,eudic.net,DIRECT
+DOMAIN-SUFFIX,feiliao.com,DIRECT
+DOMAIN-SUFFIX,feng.com,DIRECT
+DOMAIN-SUFFIX,fengkongcloud.com,DIRECT
+DOMAIN-SUFFIX,fjhps.com,DIRECT
+DOMAIN-SUFFIX,frdic.com,DIRECT
+DOMAIN-SUFFIX,futu5.com,DIRECT
+DOMAIN-SUFFIX,futunn.com,DIRECT
+DOMAIN-SUFFIX,gandi.net,DIRECT
+DOMAIN-SUFFIX,gazellegames.net,DIRECT
+DOMAIN-SUFFIX,geilicdn.com,DIRECT
+DOMAIN-SUFFIX,getpricetag.com,DIRECT
+DOMAIN-SUFFIX,gifshow.com,DIRECT
+DOMAIN-SUFFIX,godic.net,DIRECT
+DOMAIN-SUFFIX,gtimg.com,DIRECT
+DOMAIN-SUFFIX,hdbits.org,DIRECT
+DOMAIN-SUFFIX,hdchina.org,DIRECT
+DOMAIN-SUFFIX,hdhome.org,DIRECT
+DOMAIN-SUFFIX,hdsky.me,DIRECT
+DOMAIN-SUFFIX,hdslb.com,DIRECT
+DOMAIN-SUFFIX,hicloud.com,DIRECT
+DOMAIN-SUFFIX,hitv.com,DIRECT
+DOMAIN-SUFFIX,hongxiu.com,DIRECT
+DOMAIN-SUFFIX,hostbuf.com,DIRECT
+DOMAIN-SUFFIX,huxiucdn.com,DIRECT
+DOMAIN-SUFFIX,huya.com,DIRECT
+DOMAIN-SUFFIX,icetorrent.org,DIRECT
+DOMAIN-SUFFIX,icevirtuallibrary.com,DIRECT
+DOMAIN-SUFFIX,iciba.com,DIRECT
+DOMAIN-SUFFIX,idqqimg.com,DIRECT
+DOMAIN-SUFFIX,ieee.org,DIRECT
+DOMAIN-SUFFIX,iesdouyin.com,DIRECT
+DOMAIN-SUFFIX,igamecj.com,DIRECT
+DOMAIN-SUFFIX,imf.org,DIRECT
+DOMAIN-SUFFIX,infinitynewtab.com,DIRECT
+DOMAIN-SUFFIX,iop.org,DIRECT
+DOMAIN-SUFFIX,ip-cdn.com,DIRECT
+DOMAIN-SUFFIX,ip.la,DIRECT
+DOMAIN-SUFFIX,ipip.net,DIRECT
+DOMAIN-SUFFIX,ipv6-test.com,DIRECT
+DOMAIN-SUFFIX,iqiyi.com,DIRECT
+DOMAIN-SUFFIX,iqiyipic.com,DIRECT
+DOMAIN-SUFFIX,ithome.com,DIRECT
+DOMAIN-SUFFIX,jamanetwork.com,DIRECT
+DOMAIN-SUFFIX,java.com,DIRECT
+DOMAIN-SUFFIX,jd.com,DIRECT
+DOMAIN-SUFFIX,jd.hk,DIRECT
+DOMAIN-SUFFIX,jdpay.com,DIRECT
+DOMAIN-SUFFIX,jhu.edu,DIRECT
+DOMAIN-SUFFIX,jidian.im,DIRECT
+DOMAIN-SUFFIX,jpopsuki.eu,DIRECT
+DOMAIN-SUFFIX,jstor.org,DIRECT
+DOMAIN-SUFFIX,jstucdn.com,DIRECT
+DOMAIN-SUFFIX,kaiyanapp.com,DIRECT
+DOMAIN-SUFFIX,karger.com,DIRECT
+DOMAIN-SUFFIX,kaspersky-labs.com,DIRECT
+DOMAIN-SUFFIX,keepcdn.com,DIRECT
+DOMAIN-SUFFIX,keepfrds.com,DIRECT
+DOMAIN-SUFFIX,kkmh.com,DIRECT
+DOMAIN-SUFFIX,ksosoft.com,DIRECT
+DOMAIN-SUFFIX,kuyunbo.club,DIRECT
+DOMAIN-SUFFIX,libguides.com,DIRECT
+DOMAIN-SUFFIX,licdn.com,DIRECT
+DOMAIN-SUFFIX,linkedin.com,DIRECT
+DOMAIN-SUFFIX,livechina.com,DIRECT
+DOMAIN-SUFFIX,lofter.com,DIRECT
+DOMAIN-SUFFIX,loli.net,DIRECT
+DOMAIN-SUFFIX,luojilab.com,DIRECT
+DOMAIN-SUFFIX,m-team.cc,DIRECT
+DOMAIN-SUFFIX,madsrevolution.net,DIRECT
+DOMAIN-SUFFIX,maoyan.com,DIRECT
+DOMAIN-SUFFIX,maoyun.tv,DIRECT
+DOMAIN-SUFFIX,meipai.com,DIRECT
+DOMAIN-SUFFIX,meitu.com,DIRECT
+DOMAIN-SUFFIX,meituan.com,DIRECT
+DOMAIN-SUFFIX,meituan.net,DIRECT
+DOMAIN-SUFFIX,meitudata.com,DIRECT
+DOMAIN-SUFFIX,meitustat.com,DIRECT
+DOMAIN-SUFFIX,meixincdn.com,DIRECT
+DOMAIN-SUFFIX,mgtv.com,DIRECT
+DOMAIN-SUFFIX,mi-img.com,DIRECT
+DOMAIN-SUFFIX,microsoft.com,DIRECT
+DOMAIN-SUFFIX,miui.com,DIRECT
+DOMAIN-SUFFIX,miwifi.com,DIRECT
+DOMAIN-SUFFIX,mobike.com,DIRECT
+DOMAIN-SUFFIX,moke.com,DIRECT
+DOMAIN-SUFFIX,morethan.tv,DIRECT
+DOMAIN-SUFFIX,mpg.de,DIRECT
+DOMAIN-SUFFIX,msecnd.net,DIRECT
+DOMAIN-SUFFIX,mubu.com,DIRECT
+DOMAIN-SUFFIX,mxhichina.com,DIRECT
+DOMAIN-SUFFIX,myanonamouse.net,DIRECT
+DOMAIN-SUFFIX,myapp.com,DIRECT
+DOMAIN-SUFFIX,myilibrary.com,DIRECT
+DOMAIN-SUFFIX,myqcloud.com,DIRECT
+DOMAIN-SUFFIX,myzaker.com,DIRECT
+DOMAIN-SUFFIX,nanyangpt.com,DIRECT
+DOMAIN-SUFFIX,nature.com,DIRECT
+DOMAIN-SUFFIX,ncore.cc,DIRECT
+DOMAIN-SUFFIX,netease.com,DIRECT
+DOMAIN-SUFFIX,netspeedtestmaster.com,DIRECT
+DOMAIN-SUFFIX,nim-lang-cn.org,DIRECT
+DOMAIN-SUFFIX,nvidia.com,DIRECT
+DOMAIN-SUFFIX,oecd-ilibrary.org,DIRECT
+DOMAIN-SUFFIX,office365.com,DIRECT
+DOMAIN-SUFFIX,open.cd,DIRECT
+DOMAIN-SUFFIX,oracle.com,DIRECT
+DOMAIN-SUFFIX,osapublishing.org,DIRECT
+DOMAIN-SUFFIX,oup.com,DIRECT
+DOMAIN-SUFFIX,ourbits.club,DIRECT
+DOMAIN-SUFFIX,ourdvs.com,DIRECT
+DOMAIN-SUFFIX,outlook.com,DIRECT
+DOMAIN-SUFFIX,ovid.com,DIRECT
+DOMAIN-SUFFIX,oxfordartonline.com,DIRECT
+DOMAIN-SUFFIX,oxfordbibliographies.com,DIRECT
+DOMAIN-SUFFIX,oxfordmusiconline.com,DIRECT
+DOMAIN-SUFFIX,passthepopcorn.me,DIRECT
+DOMAIN-SUFFIX,paypal.com,DIRECT
+DOMAIN-SUFFIX,paypalobjects.com,DIRECT
+DOMAIN-SUFFIX,pnas.org,DIRECT
+DOMAIN-SUFFIX,privatehd.to,DIRECT
+DOMAIN-SUFFIX,proquest.com,DIRECT
+DOMAIN-SUFFIX,pstatp.com,DIRECT
+DOMAIN-SUFFIX,pterclub.com,DIRECT
+DOMAIN-SUFFIX,qdaily.com,DIRECT
+DOMAIN-SUFFIX,qhimg.com,DIRECT
+DOMAIN-SUFFIX,qhres.com,DIRECT
+DOMAIN-SUFFIX,qidian.com,DIRECT
+DOMAIN-SUFFIX,qq.com,DIRECT
+DOMAIN-SUFFIX,qyer.com,DIRECT
+DOMAIN-SUFFIX,qyerstatic.com,DIRECT
+DOMAIN-SUFFIX,raychase.net,DIRECT
+DOMAIN-SUFFIX,redacted.ch,DIRECT
+DOMAIN-SUFFIX,ronghub.com,DIRECT
+DOMAIN-SUFFIX,rsc.org,DIRECT
+DOMAIN-SUFFIX,ruguoapp.com,DIRECT
+DOMAIN-SUFFIX,s-microsoft.com,DIRECT
+DOMAIN-SUFFIX,s-reader.com,DIRECT
+DOMAIN-SUFFIX,sagepub.com,DIRECT
+DOMAIN-SUFFIX,sankuai.com,DIRECT
+DOMAIN-SUFFIX,sciencedirect.com,DIRECT
+DOMAIN-SUFFIX,sciencemag.org,DIRECT
+DOMAIN-SUFFIX,scomper.me,DIRECT
+DOMAIN-SUFFIX,scopus.com,DIRECT
+DOMAIN-SUFFIX,seafile.com,DIRECT
+DOMAIN-SUFFIX,servicewechat.com,DIRECT
+DOMAIN-SUFFIX,siam.org,DIRECT
+DOMAIN-SUFFIX,sina.com,DIRECT
+DOMAIN-SUFFIX,sm.ms,DIRECT
+DOMAIN-SUFFIX,smzdm.com,DIRECT
+DOMAIN-SUFFIX,snapdrop.net,DIRECT
+DOMAIN-SUFFIX,snssdk.com,DIRECT
+DOMAIN-SUFFIX,snwx.com,DIRECT
+DOMAIN-SUFFIX,sogo.com,DIRECT
+DOMAIN-SUFFIX,sogou.com,DIRECT
+DOMAIN-SUFFIX,sogoucdn.com,DIRECT
+DOMAIN-SUFFIX,sohu-inc.com,DIRECT
+DOMAIN-SUFFIX,sohu.com,DIRECT
+DOMAIN-SUFFIX,sohucs.com,DIRECT
+DOMAIN-SUFFIX,soku.com,DIRECT
+DOMAIN-SUFFIX,spiedigitallibrary.org,DIRECT
+DOMAIN-SUFFIX,springer.com,DIRECT
+DOMAIN-SUFFIX,springerlink.com,DIRECT
+DOMAIN-SUFFIX,springsunday.net,DIRECT
+DOMAIN-SUFFIX,sspai.com,DIRECT
+DOMAIN-SUFFIX,staticdn.net,DIRECT
+DOMAIN-SUFFIX,steam-chat.com,DIRECT
+DOMAIN-SUFFIX,steamcdn-a.akamaihd.net,DIRECT
+DOMAIN-SUFFIX,steamcontent.com,DIRECT
+DOMAIN-SUFFIX,steamgames.com,DIRECT
+DOMAIN-SUFFIX,steampowered.com,DIRECT
+DOMAIN-SUFFIX,steamstat.us,DIRECT
+DOMAIN-SUFFIX,steamstatic.com,DIRECT
+DOMAIN-SUFFIX,steamusercontent.com,DIRECT
+DOMAIN-SUFFIX,takungpao.com,DIRECT
+DOMAIN-SUFFIX,tandfonline.com,DIRECT
+DOMAIN-SUFFIX,teamviewer.com,DIRECT
+DOMAIN-SUFFIX,tencent-cloud.net,DIRECT
+DOMAIN-SUFFIX,tencent.com,DIRECT
+DOMAIN-SUFFIX,tenpay.com,DIRECT
+DOMAIN-SUFFIX,test-ipv6.com,DIRECT
+DOMAIN-SUFFIX,tianyancha.com,DIRECT
+DOMAIN-SUFFIX,tjupt.org,DIRECT
+DOMAIN-SUFFIX,tmall.com,DIRECT
+DOMAIN-SUFFIX,tmall.hk,DIRECT
+DOMAIN-SUFFIX,totheglory.im,DIRECT
+DOMAIN-SUFFIX,toutiao.com,DIRECT
+DOMAIN-SUFFIX,udache.com,DIRECT
+DOMAIN-SUFFIX,udacity.com,DIRECT
+DOMAIN-SUFFIX,un.org,DIRECT
+DOMAIN-SUFFIX,uni-bielefeld.de,DIRECT
+DOMAIN-SUFFIX,uning.com,DIRECT
+DOMAIN-SUFFIX,v-56.com,DIRECT
+DOMAIN-SUFFIX,visualstudio.com,DIRECT
+DOMAIN-SUFFIX,vmware.com,DIRECT
+DOMAIN-SUFFIX,wangsu.com,DIRECT
+DOMAIN-SUFFIX,weather.com,DIRECT
+DOMAIN-SUFFIX,webofknowledge.com,DIRECT
+DOMAIN-SUFFIX,weibo.com,DIRECT
+DOMAIN-SUFFIX,weibocdn.com,DIRECT
+DOMAIN-SUFFIX,weico.cc,DIRECT
+DOMAIN-SUFFIX,weidian.com,DIRECT
+DOMAIN-SUFFIX,westlaw.com,DIRECT
+DOMAIN-SUFFIX,whatismyip.com,DIRECT
+DOMAIN-SUFFIX,wiley.com,DIRECT
+DOMAIN-SUFFIX,windows.com,DIRECT
+DOMAIN-SUFFIX,windowsupdate.com,DIRECT
+DOMAIN-SUFFIX,worldbank.org,DIRECT
+DOMAIN-SUFFIX,worldscientific.com,DIRECT
+DOMAIN-SUFFIX,xiachufang.com,DIRECT
+DOMAIN-SUFFIX,xiami.com,DIRECT
+DOMAIN-SUFFIX,xiami.net,DIRECT
+DOMAIN-SUFFIX,xiaomi.com,DIRECT
+DOMAIN-SUFFIX,ximalaya.com,DIRECT
+DOMAIN-SUFFIX,xinhuanet.com,DIRECT
+DOMAIN-SUFFIX,xmcdn.com,DIRECT
+DOMAIN-SUFFIX,yangkeduo.com,DIRECT
+DOMAIN-SUFFIX,ydstatic.com,DIRECT
+DOMAIN-SUFFIX,youku.com,DIRECT
+DOMAIN-SUFFIX,zhangzishi.cc,DIRECT
+DOMAIN-SUFFIX,zhihu.com,DIRECT
+DOMAIN-SUFFIX,zhimg.com,DIRECT
+DOMAIN-SUFFIX,zhuihd.com,DIRECT
+DOMAIN-SUFFIX,zimuzu.io,DIRECT
+DOMAIN-SUFFIX,zimuzu.tv,DIRECT
+DOMAIN-SUFFIX,zmz2019.com,DIRECT
+DOMAIN-SUFFIX,zmzapi.com,DIRECT
+DOMAIN-SUFFIX,zmzapi.net,DIRECT
+DOMAIN-SUFFIX,zmzfile.com,DIRECT
+DOMAIN-SUFFIX,google.cn,DIRECT
+DOMAIN-SUFFIX,manmanbuy.com,DIRECT
+DOMAIN,www-cdn.icloud.com.akadns.net,DIRECT
+DOMAIN-SUFFIX,aaplimg.com,DIRECT
+DOMAIN-SUFFIX,apple-cloudkit.com,DIRECT
+DOMAIN-SUFFIX,apple.co,DIRECT
+DOMAIN-SUFFIX,apple.com,DIRECT
+DOMAIN-SUFFIX,apple.com.cn,DIRECT
+DOMAIN-SUFFIX,appstore.com,DIRECT
+DOMAIN-SUFFIX,cdn-apple.com,DIRECT
+DOMAIN-SUFFIX,crashlytics.com,DIRECT
+DOMAIN-SUFFIX,icloud-content.com,DIRECT
+DOMAIN-SUFFIX,icloud.com,DIRECT
+DOMAIN-SUFFIX,icloud.com.cn,DIRECT
+DOMAIN-SUFFIX,me.com,DIRECT
+DOMAIN-SUFFIX,mzstatic.com,DIRECT
+DOMAIN-SUFFIX,scdn.co,PROXY
+DOMAIN-SUFFIX,line.naver.jp,PROXY
+DOMAIN-SUFFIX,line.me,PROXY
+DOMAIN-SUFFIX,line-apps.com,PROXY
+DOMAIN-SUFFIX,line-cdn.net,PROXY
+DOMAIN-SUFFIX,line-scdn.net,PROXY
+USER-AGENT,Line*,PROXY
+DOMAIN-KEYWORD,blogspot,PROXY
+DOMAIN-KEYWORD,google,PROXY
+DOMAIN-SUFFIX,abc.xyz,PROXY
+DOMAIN-SUFFIX,admin.recaptcha.net,PROXY
+DOMAIN-SUFFIX,ampproject.org,PROXY
+DOMAIN-SUFFIX,android.com,PROXY
+DOMAIN-SUFFIX,androidify.com,PROXY
+DOMAIN-SUFFIX,appspot.com,PROXY
+DOMAIN-SUFFIX,autodraw.com,PROXY
+DOMAIN-SUFFIX,blogger.com,PROXY
+DOMAIN-SUFFIX,capitalg.com,PROXY
+DOMAIN-SUFFIX,certificate-transparency.org,PROXY
+DOMAIN-SUFFIX,chrome.com,PROXY
+DOMAIN-SUFFIX,chromeexperiments.com,PROXY
+DOMAIN-SUFFIX,chromestatus.com,PROXY
+DOMAIN-SUFFIX,chromium.org,PROXY
+DOMAIN-SUFFIX,creativelab5.com,PROXY
+DOMAIN-SUFFIX,debug.com,PROXY
+DOMAIN-SUFFIX,deepmind.com,PROXY
+DOMAIN-SUFFIX,dialogflow.com,PROXY
+DOMAIN-SUFFIX,firebaseio.com,PROXY
+DOMAIN-SUFFIX,getmdl.io,PROXY
+DOMAIN-SUFFIX,getoutline.org,PROXY
+DOMAIN-SUFFIX,ggpht.com,PROXY
+DOMAIN-SUFFIX,gmail.com,PROXY
+DOMAIN-SUFFIX,gmodules.com,PROXY
+DOMAIN-SUFFIX,godoc.org,PROXY
+DOMAIN-SUFFIX,golang.org,PROXY
+DOMAIN-SUFFIX,gstatic.com,PROXY
+DOMAIN-SUFFIX,gv.com,PROXY
+DOMAIN-SUFFIX,gvt0.com,PROXY
+DOMAIN-SUFFIX,gvt1.com,PROXY
+DOMAIN-SUFFIX,gvt3.com,PROXY
+DOMAIN-SUFFIX,gwtproject.org,PROXY
+DOMAIN-SUFFIX,itasoftware.com,PROXY
+DOMAIN-SUFFIX,madewithcode.com,PROXY
+DOMAIN-SUFFIX,material.io,PROXY
+DOMAIN-SUFFIX,polymer-project.org,PROXY
+DOMAIN-SUFFIX,recaptcha.net,PROXY
+DOMAIN-SUFFIX,shattered.io,PROXY
+DOMAIN-SUFFIX,synergyse.com,PROXY
+DOMAIN-SUFFIX,telephony.goog,PROXY
+DOMAIN-SUFFIX,tensorflow.org,PROXY
+DOMAIN-SUFFIX,tfhub.dev,PROXY
+DOMAIN-SUFFIX,tiltbrush.com,PROXY
+DOMAIN-SUFFIX,waveprotocol.org,PROXY
+DOMAIN-SUFFIX,waymo.com,PROXY
+DOMAIN-SUFFIX,webmproject.org,PROXY
+DOMAIN-SUFFIX,webrtc.org,PROXY
+DOMAIN-SUFFIX,whatbrowser.org,PROXY
+DOMAIN-SUFFIX,widevine.com,PROXY
+DOMAIN-SUFFIX,x.company,PROXY
+DOMAIN-SUFFIX,xn--ngstr-lra8j.com,PROXY
+DOMAIN-SUFFIX,youtu.be,PROXY
+DOMAIN-SUFFIX,yt.be,PROXY
+DOMAIN-SUFFIX,ytimg.com,PROXY
+DOMAIN-SUFFIX,clubhouseapi.com,PROXY
+DOMAIN-SUFFIX,clubhouse.pubnub.com,PROXY
+DOMAIN-SUFFIX,joinclubhouse.com,PROXY
+DOMAIN-SUFFIX,ap3.agora.io,PROXY
+DOMAIN-KEYWORD,aka,PROXY
+DOMAIN-KEYWORD,facebook,PROXY
+DOMAIN-KEYWORD,youtube,PROXY
+DOMAIN-KEYWORD,twitter,PROXY
+DOMAIN-KEYWORD,instagram,PROXY
+DOMAIN-KEYWORD,gmail,PROXY
+DOMAIN-KEYWORD,pixiv,PROXY
+DOMAIN-SUFFIX,fb.com,PROXY
+DOMAIN-SUFFIX,twimg.com,PROXY
+DOMAIN-SUFFIX,t.co,PROXY
+DOMAIN-SUFFIX,kenengba.com,PROXY
+DOMAIN-SUFFIX,akamai.net,PROXY
+DOMAIN-SUFFIX,whatsapp.net,PROXY
+DOMAIN-SUFFIX,whatsapp.com,PROXY
+DOMAIN-SUFFIX,snapchat.com,PROXY
+DOMAIN-SUFFIX,amazonaws.com,PROXY
+DOMAIN-SUFFIX,angularjs.org,PROXY
+DOMAIN-SUFFIX,akamaihd.net,PROXY
+DOMAIN-SUFFIX,amazon.com,PROXY
+DOMAIN-SUFFIX,bit.ly,PROXY
+DOMAIN-SUFFIX,bitbucket.org,PROXY
+DOMAIN-SUFFIX,blog.com,PROXY
+DOMAIN-SUFFIX,blogcdn.com,PROXY
+DOMAIN-SUFFIX,blogsmithmedia.com,PROXY
+DOMAIN-SUFFIX,box.net,PROXY
+DOMAIN-SUFFIX,bloomberg.com,PROXY
+DOMAIN-SUFFIX,cl.ly,PROXY
+DOMAIN-SUFFIX,cloudfront.net,PROXY
+DOMAIN-SUFFIX,cloudflare.com,PROXY
+DOMAIN-SUFFIX,cocoapods.org,PROXY
+DOMAIN-SUFFIX,dribbble.com,PROXY
+DOMAIN-SUFFIX,dropbox.com,PROXY
+DOMAIN-SUFFIX,dropboxstatic.com,PROXY
+DOMAIN-SUFFIX,dropboxusercontent.com,PROXY
+DOMAIN-SUFFIX,docker.com,PROXY
+DOMAIN-SUFFIX,duckduckgo.com,PROXY
+DOMAIN-SUFFIX,digicert.com,PROXY
+DOMAIN-SUFFIX,dnsimple.com,PROXY
+DOMAIN-SUFFIX,edgecastcdn.net,PROXY
+DOMAIN-SUFFIX,engadget.com,PROXY
+DOMAIN-SUFFIX,eurekavpt.com,PROXY
+DOMAIN-SUFFIX,fb.me,PROXY
+DOMAIN-SUFFIX,fbcdn.net,PROXY
+DOMAIN-SUFFIX,fc2.com,PROXY
+DOMAIN-SUFFIX,feedburner.com,PROXY
+DOMAIN-SUFFIX,fabric.io,PROXY
+DOMAIN-SUFFIX,flickr.com,PROXY
+DOMAIN-SUFFIX,fastly.net,PROXY
+DOMAIN-SUFFIX,github.com,PROXY
+DOMAIN-SUFFIX,github.io,PROXY
+DOMAIN-SUFFIX,githubusercontent.com,PROXY
+DOMAIN-SUFFIX,goo.gl,PROXY
+DOMAIN-SUFFIX,godaddy.com,PROXY
+DOMAIN-SUFFIX,gravatar.com,PROXY
+DOMAIN-SUFFIX,imageshack.us,PROXY
+DOMAIN-SUFFIX,imgur.com,PROXY
+DOMAIN-SUFFIX,jshint.com,PROXY
+DOMAIN-SUFFIX,ift.tt,PROXY
+DOMAIN-SUFFIX,j.mp,PROXY
+DOMAIN-SUFFIX,kat.cr,PROXY
+DOMAIN-SUFFIX,linode.com,PROXY
+DOMAIN-SUFFIX,lithium.com,PROXY
+DOMAIN-SUFFIX,megaupload.com,PROXY
+DOMAIN-SUFFIX,mobile01.com,PROXY
+DOMAIN-SUFFIX,modmyi.com,PROXY
+DOMAIN-SUFFIX,nytimes.com,PROXY
+DOMAIN-SUFFIX,name.com,PROXY
+DOMAIN-SUFFIX,openvpn.net,PROXY
+DOMAIN-SUFFIX,openwrt.org,PROXY
+DOMAIN-SUFFIX,ow.ly,PROXY
+DOMAIN-SUFFIX,pinboard.in,PROXY
+DOMAIN-SUFFIX,ssl-images-amazon.com,PROXY
+DOMAIN-SUFFIX,sstatic.net,PROXY
+DOMAIN-SUFFIX,stackoverflow.com,PROXY
+DOMAIN-SUFFIX,staticflickr.com,PROXY
+DOMAIN-SUFFIX,squarespace.com,PROXY
+DOMAIN-SUFFIX,symcd.com,PROXY
+DOMAIN-SUFFIX,symcb.com,PROXY
+DOMAIN-SUFFIX,symauth.com,PROXY
+DOMAIN-SUFFIX,ubnt.com,PROXY
+DOMAIN-SUFFIX,thepiratebay.org,PROXY
+DOMAIN-SUFFIX,tumblr.com,PROXY
+DOMAIN-SUFFIX,twitch.tv,PROXY
+DOMAIN-SUFFIX,twitter.com,PROXY
+DOMAIN-SUFFIX,wikipedia.com,PROXY
+DOMAIN-SUFFIX,wikipedia.org,PROXY
+DOMAIN-SUFFIX,wikimedia.org,PROXY
+DOMAIN-SUFFIX,wordpress.com,PROXY
+DOMAIN-SUFFIX,wsj.com,PROXY
+DOMAIN-SUFFIX,wsj.net,PROXY
+DOMAIN-SUFFIX,wp.com,PROXY
+DOMAIN-SUFFIX,vimeo.com,PROXY
+DOMAIN-SUFFIX,tapbots.com,PROXY
+DOMAIN-SUFFIX,ykimg.com,DIRECT
+DOMAIN-SUFFIX,medium.com,PROXY
+DOMAIN-SUFFIX,fast.com,PROXY
+DOMAIN-SUFFIX,nflxvideo.net,PROXY
+DOMAIN-SUFFIX,soundcloud.com,PROXY
+DOMAIN-SUFFIX,sndcdn.com,PROXY
+DOMAIN-SUFFIX,t.me,PROXY
+DOMAIN-SUFFIX,tdesktop.com,PROXY
+DOMAIN-SUFFIX,telegra.ph,PROXY
+DOMAIN-SUFFIX,telegram.me,PROXY
+DOMAIN-SUFFIX,telegram.org,PROXY
+DOMAIN-SUFFIX,telesco.pe,PROXY
+# NAME: TikTok
+DOMAIN,p16-tiktokcdn-com.akamaized.net
+DOMAIN-SUFFIX,byteoversea.com
+DOMAIN-SUFFIX,ibytedtos.com
+DOMAIN-SUFFIX,ibyteimg.com
+DOMAIN-SUFFIX,ipstatp.com
+DOMAIN-SUFFIX,muscdn.com
+DOMAIN-SUFFIX,musical.ly
+DOMAIN-SUFFIX,sgpstatp.com
+DOMAIN-SUFFIX,snssdk.com
+DOMAIN-SUFFIX,tik-tokapi.com
+DOMAIN-SUFFIX,tiktok.com
+DOMAIN-SUFFIX,tiktokcdn.com
+DOMAIN-SUFFIX,tiktokv.com
+DOMAIN-KEYWORD,-tiktokcdn-com
+USER-AGENT,TikTok*
+IP-CIDR,91.108.4.0/22,PROXY,no-resolve
+IP-CIDR,91.108.8.0/22,PROXY,no-resolve
+IP-CIDR,91.108.12.0/22,PROXY,no-resolve
+IP-CIDR,91.108.16.0/22,PROXY,no-resolve
+IP-CIDR,91.108.56.0/22,PROXY,no-resolve
+IP-CIDR,109.239.140.0/24,PROXY,no-resolve
+IP-CIDR,149.154.160.0/20,PROXY,no-resolve
+IP-CIDR,2001:b28:f23d::/48,PROXY,no-resolve
+IP-CIDR,2001:b28:f23f::/48,PROXY,no-resolve
+IP-CIDR,2001:67c:4e8::/48,PROXY,no-resolve
+IP-CIDR,192.168.0.0/16,DIRECT
+IP-CIDR,10.0.0.0/8,DIRECT
+IP-CIDR,172.16.0.0/12,DIRECT
+IP-CIDR,127.0.0.0/8,DIRECT
+GEOIP,CN,DIRECT
+FINAL,PROXY
 
-sysArch(){
-    ARCH=$(uname -m)
-    if [[ "$ARCH" == "i686" ]] || [[ "$ARCH" == "i386" ]]; then
-        VDIS="32"
-    elif [[ "$ARCH" == *"armv7"* ]] || [[ "$ARCH" == "armv6l" ]]; then
-        VDIS="arm"
-    elif [[ "$ARCH" == *"armv8"* ]] || [[ "$ARCH" == "aarch64" ]]; then
-        VDIS="64"
-    elif [[ "$ARCH" == *"mips64le"* ]]; then
-        VDIS="mips64le"
-    elif [[ "$ARCH" == *"mips64"* ]]; then
-        VDIS="mips64"
-    elif [[ "$ARCH" == *"mipsle"* ]]; then
-        VDIS="mipsle"
-    elif [[ "$ARCH" == *"mips"* ]]; then
-        VDIS="mips"
-    elif [[ "$ARCH" == *"s390x"* ]]; then
-        VDIS="s390x"
-    elif [[ "$ARCH" == "ppc64le" ]]; then
-        VDIS="ppc64le"
-    elif [[ "$ARCH" == "ppc64" ]]; then
-        VDIS="ppc64"
-    fi
-    return 0
-}
+[Host]
+localhost = 127.0.0.1
 
-downloadV2Ray(){
-    rm -rf /tmp/v2ray
-    mkdir -p /tmp/v2ray
-    colorEcho ${BLUE} "Downloading V2Ray."
-    DOWNLOAD_LINK="https://github.com/ColetteContreras/v2ray-poseidon/releases/download/${NEW_VER}/v2ray-linux-${VDIS}.zip"
-    curl ${PROXY} -L -H "Cache-Control: no-cache" -o ${ZIPFILE} ${DOWNLOAD_LINK}
-    if [ $? != 0 ];then
-        colorEcho ${RED} "Failed to download! Please check your network or try again."
-        return 3
-    fi
-    return 0
-}
-
-installSoftware(){
-    COMPONENT=$1
-    if [[ -n `command -v $COMPONENT` ]]; then
-        return 0
-    fi
-
-    getPMT
-    if [[ $? -eq 1 ]]; then
-        colorEcho ${RED} "The system package manager tool isn't APT or YUM, please install ${COMPONENT} manually."
-        return 1 
-    fi
-    if [[ $SOFTWARE_UPDATED -eq 0 ]]; then
-        colorEcho ${BLUE} "Updating software repo"
-        $CMD_UPDATE      
-        SOFTWARE_UPDATED=1
-    fi
-
-    colorEcho ${BLUE} "Installing ${COMPONENT}"
-    $CMD_INSTALL $COMPONENT
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${RED} "Failed to install ${COMPONENT}. Please install it manually."
-        return 1
-    fi
-    return 0
-}
-
-# return 1: not apt, yum, or zypper
-getPMT(){
-    if [[ -n `command -v apt-get` ]];then
-        CMD_INSTALL="apt-get -y -qq install"
-        CMD_UPDATE="apt-get -qq update"
-    elif [[ -n `command -v yum` ]]; then
-        CMD_INSTALL="yum -y -q install"
-        CMD_UPDATE="yum -q makecache"
-    elif [[ -n `command -v zypper` ]]; then
-        CMD_INSTALL="zypper -y install"
-        CMD_UPDATE="zypper ref"
-    else
-        return 1
-    fi
-    return 0
-}
-
-extract(){
-    colorEcho ${BLUE}"Extracting V2Ray package to /tmp/v2ray."
-    mkdir -p /tmp/v2ray
-    unzip $1 -d ${VSRC_ROOT}
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${RED} "Failed to extract V2Ray."
-        return 2
-    fi
-    if [[ -d "/tmp/v2ray/v2ray-${NEW_VER}-linux-${VDIS}" ]]; then
-      VSRC_ROOT="/tmp/v2ray/v2ray-${NEW_VER}-linux-${VDIS}"
-    fi
-    return 0
-}
+[URL Rewrite]
+(?<=_region=)CN(?=&) US 307
+(?<=&mcc_mnc=)4 2 307
+^(https?:\/\/(tnc|dm)[\w-]+\.\w+\.com\/.+)(\?)(.+) $1$3 302
+(^https?:\/\/*\.\w{4}okv.com\/.+&.+)(\d{2}\.3\.\d)(.+) $118.0$3 302
 
 
-# 1: new V2Ray. 0: no. 2: not installed. 3: check failed. 4: don't check.
-getVersion(){
-    if [[ -n "$VERSION" ]]; then
-        NEW_VER="$VERSION"
-        if [[ ${NEW_VER} != v* ]]; then
-          NEW_VER=v${NEW_VER}
-        fi
-        return 4
-    else
-        VER=`/usr/bin/v2ray/v2ray -version 2>/dev/null`
-        RETVAL="$?"
-        CUR_VER=`echo $VER | head -n 1 | cut -d " " -f2`
-        if [[ ${CUR_VER} != v* ]]; then
-            CUR_VER=v${CUR_VER}
-        fi
-        TAG_URL="https://api.github.com/repos/ColetteContreras/v2ray-poseidon/releases/latest"
-        NEW_VER=`curl ${PROXY} -s ${TAG_URL} --connect-timeout 10| grep 'tag_name' | head -1 | cut -d\" -f4`
-        if [[ ${NEW_VER} != v* ]]; then
-          NEW_VER=v${NEW_VER}
-        fi
-        if [[ $? -ne 0 ]] || [[ $NEW_VER == "" ]]; then
-            colorEcho ${RED} "Failed to fetch release information. Please check your network or try again."
-            return 3
-        elif [[ $RETVAL -ne 0 ]];then
-            return 2
-        elif [[ "$NEW_VER" != "$CUR_VER" ]];then
-            return 1
-        fi
-        return 0
-    fi
-}
 
-stopV2ray(){
-    colorEcho ${BLUE} "Shutting down V2Ray service."
-    if [[ -n "${SYSTEMCTL_CMD}" ]] || [[ -f "/lib/systemd/system/v2ray.service" ]] || [[ -f "/etc/systemd/system/v2ray.service" ]]; then
-        ${SYSTEMCTL_CMD} stop v2ray
-    elif [[ -n "${SERVICE_CMD}" ]] || [[ -f "/etc/init.d/v2ray" ]]; then
-        ${SERVICE_CMD} v2ray stop
-    fi
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${YELLOW} "Failed to shutdown V2Ray service."
-        return 2
-    fi
-    return 0
-}
+[MITM]
+hostname = *.tiktokv.com,*.byteoversea.com,*.tik-tokapi.com
 
-startV2ray(){
-    if [ -n "${SYSTEMCTL_CMD}" ] && [ -f "/lib/systemd/system/v2ray.service" ]; then
-        ${SYSTEMCTL_CMD} start v2ray
-    elif [ -n "${SYSTEMCTL_CMD}" ] && [ -f "/etc/systemd/system/v2ray.service" ]; then
-        ${SYSTEMCTL_CMD} start v2ray
-    elif [ -n "${SERVICE_CMD}" ] && [ -f "/etc/init.d/v2ray" ]; then
-        ${SERVICE_CMD} v2ray start
-    fi
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${YELLOW} "Failed to start V2Ray service."
-        return 2
-    fi
-    return 0
-}
-
-copyFile() {
-    NAME=$1
-    ERROR=`cp "${VSRC_ROOT}/${NAME}" "/usr/bin/v2ray/${NAME}" 2>&1`
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${YELLOW} "${ERROR}"
-        return 1
-    fi
-    return 0
-}
-
-makeExecutable() {
-    chmod +x "/usr/bin/v2ray/$1"
-}
-
-installV2Ray(){
-    # Install V2Ray binary to /usr/bin/v2ray
-    mkdir -p /usr/bin/v2ray
-    copyFile v2ray
-    if [[ $? -ne 0 ]]; then
-        colorEcho ${RED} "Failed to copy V2Ray binary and resources."
-        return 1
-    fi
-    makeExecutable v2ray
-
-    # Install V2Ray server config to /etc/v2ray
-    if [[ ! -f "/etc/v2ray/config.json" ]]; then
-        mkdir -p /etc/v2ray
-        mkdir -p /var/log/v2ray
-        cp "${VSRC_ROOT}/config.json" "/etc/v2ray/config.json"
-        if [[ $? -ne 0 ]]; then
-            colorEcho ${YELLOW} "Failed to create V2Ray configuration file. Please create it manually."
-            return 1
-        fi
-        let PORT=$RANDOM+10000
-        UUID=$(cat /proc/sys/kernel/random/uuid)
-
-        sed -i "s/10086/${PORT}/g" "/etc/v2ray/config.json"
-        sed -i "s/23ad6b10-8d1a-40f7-8ad0-e3e35cd38297/${UUID}/g" "/etc/v2ray/config.json"
-
-        colorEcho ${BLUE} "PORT:${PORT}"
-        colorEcho ${BLUE} "UUID:${UUID}"
-    fi
-    return 0
-}
-
-
-installInitScript(){
-    if [[ -n "${SYSTEMCTL_CMD}" ]];then
-        cp ${VSRC_ROOT}/systemd/* /etc/systemd/system/
-        systemctl enable v2ray.service
-        return
-    elif [[ -n "${SERVICE_CMD}" ]] && [[ ! -f "/etc/init.d/v2ray" ]]; then
-        installSoftware "daemon" || return $?
-        cp "${VSRC_ROOT}/systemv/v2ray" "/etc/init.d/v2ray"
-        chmod +x "/etc/init.d/v2ray"
-        update-rc.d v2ray defaults
-    fi
-    return
-}
-
-Help(){
-    echo "./install-release.sh [-h] [-c] [--remove] [-p proxy] [-f] [--version vx.y.z] [-l file]"
-    echo "  -h, --help            Show help"
-    echo "  -p, --proxy           To download through a proxy server, use -p socks5://127.0.0.1:1080 or -p http://127.0.0.1:3128 etc"
-    echo "  -f, --force           Force install"
-    echo "      --version         Install a particular version, use --version v3.15"
-    echo "  -l, --local           Install from a local file"
-    echo "      --remove          Remove installed V2Ray"
-    echo "  -c, --check           Check for update"
-    return 0
-}
-
-remove(){
-    if [[ -n "${SYSTEMCTL_CMD}" ]] && [[ -f "/etc/systemd/system/v2ray.service" ]];then
-        if pgrep "v2ray" > /dev/null ; then
-            stopV2ray
-        fi
-        systemctl disable v2ray.service
-        rm -rf "/usr/bin/v2ray" "/etc/systemd/system/v2ray.service"
-        if [[ $? -ne 0 ]]; then
-            colorEcho ${RED} "Failed to remove V2Ray."
-            return 0
-        else
-            colorEcho ${GREEN} "Removed V2Ray successfully."
-            colorEcho ${BLUE} "If necessary, please remove configuration file and log file manually."
-            return 0
-        fi
-    elif [[ -n "${SYSTEMCTL_CMD}" ]] && [[ -f "/lib/systemd/system/v2ray.service" ]];then
-        if pgrep "v2ray" > /dev/null ; then
-            stopV2ray
-        fi
-        systemctl disable v2ray.service
-        rm -rf "/usr/bin/v2ray" "/lib/systemd/system/v2ray.service"
-        if [[ $? -ne 0 ]]; then
-            colorEcho ${RED} "Failed to remove V2Ray."
-            return 0
-        else
-            colorEcho ${GREEN} "Removed V2Ray successfully."
-            colorEcho ${BLUE} "If necessary, please remove configuration file and log file manually."
-            return 0
-        fi
-    elif [[ -n "${SERVICE_CMD}" ]] && [[ -f "/etc/init.d/v2ray" ]]; then
-        if pgrep "v2ray" > /dev/null ; then
-            stopV2ray
-        fi
-        rm -rf "/usr/bin/v2ray" "/etc/init.d/v2ray"
-        if [[ $? -ne 0 ]]; then
-            colorEcho ${RED} "Failed to remove V2Ray."
-            return 0
-        else
-            colorEcho ${GREEN} "Removed V2Ray successfully."
-            colorEcho ${BLUE} "If necessary, please remove configuration file and log file manually."
-            return 0
-        fi       
-    else
-        colorEcho ${YELLOW} "V2Ray not found."
-        return 0
-    fi
-}
-
-checkUpdate(){
-    echo "Checking for update."
-    VERSION=""
-    getVersion
-    RETVAL="$?"
-    if [[ $RETVAL -eq 1 ]]; then
-        colorEcho ${BLUE} "Found new version ${NEW_VER} for V2Ray.(Current version:$CUR_VER)"
-    elif [[ $RETVAL -eq 0 ]]; then
-        colorEcho ${BLUE} "No new version. Current version is ${NEW_VER}."
-    elif [[ $RETVAL -eq 2 ]]; then
-        colorEcho ${YELLOW} "No V2Ray installed."
-        colorEcho ${BLUE} "The newest version for V2Ray is ${NEW_VER}."
-    fi
-    return 0
-}
-
-main(){
-    #helping information
-    [[ "$HELP" == "1" ]] && Help && return
-    [[ "$CHECK" == "1" ]] && checkUpdate && return
-    [[ "$REMOVE" == "1" ]] && remove && return
-    
-    sysArch
-    # extract local file
-    if [[ $LOCAL_INSTALL -eq 1 ]]; then
-        colorEcho ${YELLOW} "Installing V2Ray via local file. Please make sure the file is a valid V2Ray package, as we are not able to determine that."
-        NEW_VER=local
-        installSoftware unzip || return $?
-        rm -rf /tmp/v2ray
-        extract $LOCAL || return $?
-        #FILEVDIS=`ls /tmp/v2ray |grep v2ray-v |cut -d "-" -f4`
-        #SYSTEM=`ls /tmp/v2ray |grep v2ray-v |cut -d "-" -f3`
-        #if [[ ${SYSTEM} != "linux" ]]; then
-        #    colorEcho ${RED} "The local V2Ray can not be installed in linux."
-        #    return 1
-        #elif [[ ${FILEVDIS} != ${VDIS} ]]; then
-        #    colorEcho ${RED} "The local V2Ray can not be installed in ${ARCH} system."
-        #    return 1
-        #else
-        #    NEW_VER=`ls /tmp/v2ray |grep v2ray-v |cut -d "-" -f2`
-        #fi
-    else
-        # download via network and extract
-        installSoftware "curl" || return $?
-        getVersion
-        RETVAL="$?"
-        if [[ $RETVAL == 0 ]] && [[ "$FORCE" != "1" ]]; then
-            colorEcho ${BLUE} "Latest version ${NEW_VER} is already installed."
-            if [[ "${ERROR_IF_UPTODATE}" == "1" ]]; then
-              return 10
-            fi
-            return
-        elif [[ $RETVAL == 3 ]]; then
-            return 3
-        else
-            colorEcho ${BLUE} "Installing V2Ray ${NEW_VER} on ${ARCH}"
-            downloadV2Ray || return $?
-            installSoftware unzip || return $?
-            extract ${ZIPFILE} || return $?
-        fi
-    fi 
-    
-    if [[ "${EXTRACT_ONLY}" == "1" ]]; then
-        colorEcho ${GREEN} "V2Ray extracted to ${VSRC_ROOT}, and exiting..."
-        return 0
-    fi
-
-    if pgrep "v2ray" > /dev/null ; then
-        V2RAY_RUNNING=1
-        stopV2ray
-    fi
-    installV2Ray || return $?
-    installInitScript || return $?
-    if [[ ${V2RAY_RUNNING} -eq 1 ]];then
-        colorEcho ${BLUE} "Restarting V2Ray service."
-        startV2ray
-    fi
-    colorEcho ${GREEN} "V2Ray ${NEW_VER} is installed."
-    rm -rf /tmp/v2ray
-    return 0
-}
-
-main
